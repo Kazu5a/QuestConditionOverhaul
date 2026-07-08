@@ -7,18 +7,18 @@ It works on the merged quest database during `PostDBLoad`, so it does not care w
 ## What it changes
 
 - preserves quest ids, rewards, trader ownership, and quest chain order
-- preserves only `Quest` prerequisites in `AvailableForStart`
+- leaves `AvailableForStart` unchanged
 - replaces `AvailableForFinish` with one generated condition:
   - kill targets
   - hand over dogtags
   - hand over money
-- optionally forces quest location to `any`
+- can force quest location to `any`, otherwise keeps the quest location field as-is
 - rewrites quest locale text to match the new condition
 
 ## Build
 
 ```powershell
-dotnet build .\QuestConditionOverhaulFinal\kazusa-QuestConditionOverhaul.csproj -c Release
+dotnet build .\kazusa-QuestConditionOverhaul.csproj -c Release
 ```
 
 Build output:

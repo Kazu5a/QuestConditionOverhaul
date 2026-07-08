@@ -176,9 +176,13 @@ public class PostDbLoad(
         }
 
         int moneyRoll = GetDeterministicPercent(questId, config.Seed, "moneyType");
-        CurrencyKind currency = moneyRoll < config.Money.RoublesChance
+        int totalCurrencyWeight = Math.Max(1, config.Money.RoublesChance + config.Money.EurosChance + config.Money.DollarsChance);
+        int roublesThreshold = config.Money.RoublesChance * 100 / totalCurrencyWeight;
+        int eurosThreshold = (config.Money.RoublesChance + config.Money.EurosChance) * 100 / totalCurrencyWeight;
+
+        CurrencyKind currency = moneyRoll < roublesThreshold
             ? CurrencyKind.Roubles
-            : moneyRoll < config.Money.RoublesChance + config.Money.EurosChance
+            : moneyRoll < eurosThreshold
                 ? CurrencyKind.Euros
                 : CurrencyKind.Dollars;
 
@@ -362,7 +366,7 @@ public class PostDbLoad(
     {
         return new LocaleTemplates
         {
-            Kill = "Eliminate {count} {target} on any map",
+            Kill = "Eliminate {count} {target}",
             Dogtag = "Hand over {count} {faction} dogtags",
             Roubles = "Hand over {count} Roubles",
             Euros = "Hand over {count} Euros",

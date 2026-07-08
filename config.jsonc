@@ -14,27 +14,27 @@
   // List of trader IDs to exclude from overhaul
   "excludedTraderIds": [],
 
-  // Force quest locations to be "Any" (any map). If true, quests can be completed on any map. If false, quests are restricted to their original map (e.g. Customs, Woods), but specific sub-area restrictions (e.g. Gas Station, Dorms) are always removed.
+  // Force the quest location field to be "any". If false, keep the original quest location field unchanged.
   "setLocationToAny": true,
 
   // The seed value for deterministic generation. Change this to roll a completely new set of quests.
-  "seed": "quest-condition-overhaul-v1",
+  "seed": "ToumaKazusa",
 
   // Relative weights for generating quest conditions. They will be normalized automatically.
   "weights": {
-    "kills": 40,
-    "dogtags": 40,
-    "money": 20
+    "kills": 50,
+    "dogtags": 35,
+    "money": 15
   },
 
   // Range of targets required for kill quests
   "kills": {
     "pmcChance": 70,            // Chance (0-100) of rolling a PMC target instead of a SCAV target
     "usecChance": 50,           // Chance (0-100) of rolling a USEC target instead of a BEAR target when distinguishFactions is true
-    "minCount": 10,
-    "maxCount": 50,
+    "minCount": 5,
+    "maxCount": 20,
     // If true, distinguishes between USEC and BEAR PMCs. If false, kills are merged into generic "PMC" targets.
-    "distinguishFactions": true
+    "distinguishFactions": false
   },
 
   // Dogtag quest options
@@ -96,22 +96,22 @@
     "roublesChance": 60,       // Chance (0-100) of rolling Roubles
     "eurosChance": 20,         // Chance (0-100) of rolling Euros
     "dollarsChance": 20,       // Chance (0-100) of rolling Dollars
-    "roublesMin": 500000,
-    "roublesMax": 5000000,
+    "roublesMin": 100000,
+    "roublesMax": 1000000,
     "roublesStep": 10000,
-    "eurosMin": 2000,
-    "eurosMax": 20000,
+    "eurosMin": 1000,
+    "eurosMax": 10000,
     "eurosStep": 100,
-    "dollarsMin": 2000,
-    "dollarsMax": 20000,
+    "dollarsMin": 1000,
+    "dollarsMax": 10000,
     "dollarsStep": 100
   },
 
   // Multilingual formatting templates for quest descriptions
   "locales": {
     "ch": {
-      "kill": "在任意地图击杀 {count} 名 {target}",
-      "dogtag": "在战局中上交 {count} 个 {faction} 身份牌",
+      "kill": "击杀 {count} 名 {target}",
+      "dogtag": "上交 {count} 个 {faction} 身份牌",
       "roubles": "上交 {count} 卢布",
       "euros": "上交 {count} 欧元",
       "dollars": "上交 {count} 美元",
@@ -128,7 +128,7 @@
       }
     },
     "en": {
-      "kill": "Eliminate {count} {target} on any map",
+      "kill": "Eliminate {count} {target}",
       "dogtag": "Hand over {count} {faction} dogtags",
       "roubles": "Hand over {count} Roubles",
       "euros": "Hand over {count} Euros",
@@ -146,7 +146,7 @@
       }
     },
     "ru": {
-      "kill": "Устранить {count} {target} на любой карте",
+      "kill": "Устранить {count} {target}",
       "dogtag": "Передать {count} жетонов {faction}",
       "roubles": "Передать {count} рублей",
       "euros": "Передать {count} евро",
@@ -164,7 +164,7 @@
       }
     },
     "de": {
-      "kill": "Eliminiere {count} {target} auf einer beliebigen Karte",
+      "kill": "Eliminiere {count} {target}",
       "dogtag": "Übergib {count} {faction}-Erkennungsmarken",
       "roubles": "Übergib {count} Rubel",
       "euros": "Übergib {count} Euro",
@@ -182,7 +182,7 @@
       }
     },
     "fr": {
-      "kill": "Éliminer {count} {target} sur n'importe quelle carte",
+      "kill": "Éliminer {count} {target}",
       "dogtag": "Livrer {count} plaques d'identification {faction}",
       "roubles": "Livrer {count} Roubles",
       "euros": "Livrer {count} Euros",
@@ -200,7 +200,7 @@
       }
     },
     "es": {
-      "kill": "Eliminar a {count} {target} en cualquier mapa",
+      "kill": "Eliminar a {count} {target}",
       "dogtag": "Entregar {count} chapas de identificación de {faction}",
       "roubles": "Entregar {count} rublos",
       "euros": "Entregar {count} euros",
@@ -218,7 +218,7 @@
       }
     },
     "jp": {
-      "kill": "任意のマップで {target} を {count} 人排除する",
+      "kill": "{target} を {count} 人排除する",
       "dogtag": "{faction} のドッグタグを {count} 個引き渡す",
       "roubles": "{count} ルーブルを引き渡す",
       "euros": "{count} ユーロを引き渡す",
