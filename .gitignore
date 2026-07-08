@@ -2,6 +2,7 @@
 bin/
 obj/
 Build/
+Release/
 
 # User settings
 *.user
@@ -15,6 +16,4 @@ Build/
 .DS_Store
 Thumbs.db
 
-# Mod debug log/summary outputs
-last-run-summary.json
-locale_to_add.txt
+
