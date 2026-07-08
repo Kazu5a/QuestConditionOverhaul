@@ -35,9 +35,6 @@ public sealed class OverhaulConfig
     [JsonPropertyName("excludedTraderIds")]
     public List<string> ExcludedTraderIds { get; set; } = [];
 
-    [JsonPropertyName("setLocationToAny")]
-    public bool SetLocationToAny { get; set; } = true;
-
     [JsonPropertyName("seed")]
     public string Seed { get; set; } = "quest-condition-overhaul-v1";
 

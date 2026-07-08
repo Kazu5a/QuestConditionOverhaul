@@ -14,9 +14,6 @@
   // List of trader IDs to exclude from overhaul
   "excludedTraderIds": [],
 
-  // Force the quest location field to be "any". If false, keep the original quest location field unchanged.
-  "setLocationToAny": true,
-
   // The seed value for deterministic generation. Change this to roll a completely new set of quests.
   "seed": "ToumaKazusa",
 

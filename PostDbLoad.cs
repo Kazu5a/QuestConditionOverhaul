@@ -82,11 +82,7 @@ public class PostDbLoad(
 
             GeneratedConditionPlan plan = BuildPlan(questId, config);
             quest.Type = plan.QuestType;
-
-            if (config.SetLocationToAny)
-            {
-                quest.Location = "any";
-            }
+            quest.Location = "any";
 
             QuestCondition finishCondition = CreateFinishCondition(questId, plan, config);
             quest.Conditions.AvailableForFinish = new List<QuestCondition> { finishCondition };

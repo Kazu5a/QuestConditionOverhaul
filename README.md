@@ -12,7 +12,7 @@ It works on the merged quest database during `PostDBLoad`, so it does not care w
   - kill targets
   - hand over dogtags
   - hand over money
-- can force quest location to `any`, otherwise keeps the quest location field as-is
+- always forces quest location to `any`
 - rewrites quest locale text to match the new condition
 
 ## Build
