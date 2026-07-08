@@ -5,7 +5,7 @@ namespace QuestConditionOverhaulFinal;
 
 public record ModMetadata : SPTarkov.Server.Core.Models.Spt.Mod.AbstractModMetadata
 {
-    public override string ModGuid { get; init; } = "custom-static-kazusa-QuestConditionOverhaul";
+    public override string ModGuid { get; init; } = "com.kazusa.questconditionoverhaul";
     public override string Name { get; init; } = "kazusa-QuestConditionOverhaul";
     public override string Author { get; init; } = "kazusa";
     public override List<string>? Contributors { get; init; }
