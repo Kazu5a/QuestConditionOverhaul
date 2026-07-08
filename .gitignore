@@ -1,0 +1,20 @@
+# Build outputs
+bin/
+obj/
+Build/
+
+# User settings
+*.user
+*.userosscache
+
+# IDE configuration folders
+.vs/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Mod debug log/summary outputs
+last-run-summary.json
+locale_to_add.txt
