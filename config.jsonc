@@ -72,9 +72,6 @@
     "5c0647fdd443bc2504c2d371": false  // Jaeger
   },
 
-  // Force quest locations to be "Any" (any map). If true, quests can be completed on any map. If false, quests are restricted to their original map (e.g. Customs, Woods), but specific sub-area restrictions (e.g. Gas Station, Dorms) are always removed.
-  "setLocationToAny": true,
-
   // The seed value for deterministic generation. Change this to roll a completely new set of quests.
   "seed": "ToumaKazusa",
 
