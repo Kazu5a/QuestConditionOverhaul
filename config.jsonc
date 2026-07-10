@@ -2,17 +2,78 @@
   // Enable or disable the mod entirely
   "enabled": true,
 
-  // Process all loaded quests (vanilla + modded). If false, only targetTraderIds will be processed.
+  // --- QUEST & TRADER FILTERING LOGIC (PRIORITIES & RELATIONSHIPS) ---
+  //
+  // 1. Excluded Quests (excludedQuestIds) -> PRIORITY 1 (HIGHEST)
+  //    - Any quest ID listed in this array will NEVER be modified, regardless of other settings.
+  //
+  // 2. Excluded Traders (excludedTraderIds) -> PRIORITY 2
+  //    - If a trader is set to `true` here, all of their quests will be skipped (NEVER modified).
+  //
+  // 3. Process All Quests (processAllQuests) & Target Traders (targetTraderIds) -> PRIORITY 3
+  //    - If `processAllQuests` is `true`:
+  //      All quests in the game (vanilla + modded) will be modified, EXCEPT those skipped by Priority 1 & 2.
+  //    - If `processAllQuests` is `false`:
+  //      Only quests belonging to traders set to `true` in `targetTraderIds` will be modified, EXCEPT those skipped by Priority 1 & 2.
+  //
+  // 4. Modded Traders Auto-Discovery:
+  //    - You only need to configure vanilla traders here. On first startup, any modded traders found in quests
+  //      will automatically be appended to `targetTraderIds` and `excludedTraderIds` as `false` with comments.
+  //
+  // ---------------------------------------------------------------------
+  //
+  // --- 任务和商人筛选过滤逻辑（优先级与相互关系说明） ---
+  //
+  // 1. 任务排除列表 (excludedQuestIds) -> 优先级 1（最高）
+  //    - 凡是写入该列表的任务 ID，无论其他配置如何，都【绝对不会】被重构修改。
+  //
+  // 2. 商人排除列表 (excludedTraderIds) -> 优先级 2
+  //    - 在该字典中被设置为 `true` 的商人，其所有的任务都会被跳过，【绝对不会】被重构修改。
+  //
+  // 3. 全局处理开关 (processAllQuests) 与 目标商人列表 (targetTraderIds) -> 优先级 3
+  //    - 若 `processAllQuests` 设为 `true`：
+  //      全游戏的所有任务（原版+模组）都会被重构，除非被上述“优先级 1 & 2”排除。
+  //    - 若 `processAllQuests` 设为 `false`：
+  //      仅在 `targetTraderIds` 字典中被设置为 `true` 的商人任务才会被重构，除非被上述“优先级 1 & 2”排除。
+  //
+  // 4. 模组商人自动识别：
+  //    - 你只需配置下方的原版商人即可。第一次启动服务器后，模组会自动扫描所有任务用到的模组商人，
+  //      并将他们的 ID 自动追加至下方两个字典中（默认保持为 `false` 并带名称注释），方便你直接开启。
+  //
+  // ---------------------------------------------------------------------
+
+  // Process all loaded quests (vanilla + modded). If false, only targetTraderIds set to true will be processed.
   "processAllQuests": true,
 
-  // List of trader IDs to process if processAllQuests is false
-  "targetTraderIds": [],
+  // List of trader IDs to process if processAllQuests is false (set to true to enable)
+  "targetTraderIds": {
+    "54cb50c76803fa8b248b4571": false, // Prapor
+    "54cb57776803fa99248b456e": false, // Therapist
+    "579dc571d53a0658a154fbec": false, // Fence
+    "58330581ace78e27b8b10cee": false, // Skier
+    "5935c25fb3acc3127c3d8cd9": false, // Peacekeeper
+    "5a7c2eca46aef81a7ca2145d": false,  // Mechanic
+    "5ac3b934156ae10c4430e83c": false, // Ragman
+    "5c0647fdd443bc2504c2d371": false  // Jaeger
+  },
 
   // List of quest IDs to exclude from overhaul
   "excludedQuestIds": [],
 
-  // List of trader IDs to exclude from overhaul
-  "excludedTraderIds": [],
+  // List of trader IDs to exclude from overhaul (set to true to exclude)
+  "excludedTraderIds": {
+    "54cb50c76803fa8b248b4571": false, // Prapor
+    "54cb57776803fa99248b456e": false, // Therapist
+    "579dc571d53a0658a154fbec": false, // Fence
+    "58330581ace78e27b8b10cee": false, // Skier
+    "5935c25fb3acc3127c3d8cd9": false, // Peacekeeper
+    "5a7c2eca46aef81a7ca2145d": false, // Mechanic
+    "5ac3b934156ae10c4430e83c": false, // Ragman
+    "5c0647fdd443bc2504c2d371": false  // Jaeger
+  },
+
+  // Force quest locations to be "Any" (any map). If true, quests can be completed on any map. If false, quests are restricted to their original map (e.g. Customs, Woods), but specific sub-area restrictions (e.g. Gas Station, Dorms) are always removed.
+  "setLocationToAny": true,
 
   // The seed value for deterministic generation. Change this to roll a completely new set of quests.
   "seed": "ToumaKazusa",
@@ -107,8 +168,8 @@
   // Multilingual formatting templates for quest descriptions
   "locales": {
     "ch": {
-      "kill": "击杀 {count} 名 {target}",
-      "dogtag": "上交 {count} 个 {faction} 身份牌",
+      "kill": "在任意地图击杀 {count} 名 {target}",
+      "dogtag": "在战局中上交 {count} 个 {faction} 身份牌",
       "roubles": "上交 {count} 卢布",
       "euros": "上交 {count} 欧元",
       "dollars": "上交 {count} 美元",
@@ -125,7 +186,7 @@
       }
     },
     "en": {
-      "kill": "Eliminate {count} {target}",
+      "kill": "Eliminate {count} {target} on any map",
       "dogtag": "Hand over {count} {faction} dogtags",
       "roubles": "Hand over {count} Roubles",
       "euros": "Hand over {count} Euros",
@@ -143,7 +204,7 @@
       }
     },
     "ru": {
-      "kill": "Устранить {count} {target}",
+      "kill": "Устранить {count} {target} на любой карте",
       "dogtag": "Передать {count} жетонов {faction}",
       "roubles": "Передать {count} рублей",
       "euros": "Передать {count} евро",
@@ -161,7 +222,7 @@
       }
     },
     "de": {
-      "kill": "Eliminiere {count} {target}",
+      "kill": "Eliminiere {count} {target} auf einer beliebigen Karte",
       "dogtag": "Übergib {count} {faction}-Erkennungsmarken",
       "roubles": "Übergib {count} Rubel",
       "euros": "Übergib {count} Euro",
@@ -179,7 +240,7 @@
       }
     },
     "fr": {
-      "kill": "Éliminer {count} {target}",
+      "kill": "Éliminer {count} {target} sur n'importe quelle carte",
       "dogtag": "Livrer {count} plaques d'identification {faction}",
       "roubles": "Livrer {count} Roubles",
       "euros": "Livrer {count} Euros",
@@ -197,7 +258,7 @@
       }
     },
     "es": {
-      "kill": "Eliminar a {count} {target}",
+      "kill": "Eliminar a {count} {target} en cualquier mapa",
       "dogtag": "Entregar {count} chapas de identificación de {faction}",
       "roubles": "Entregar {count} rublos",
       "euros": "Entregar {count} euros",
@@ -215,7 +276,7 @@
       }
     },
     "jp": {
-      "kill": "{target} を {count} 人排除する",
+      "kill": "任意のマップで {target} を {count} 人排除する",
       "dogtag": "{faction} のドッグタグを {count} 個引き渡す",
       "roubles": "{count} ルーブルを引き渡す",
       "euros": "{count} ユーロを引き渡す",

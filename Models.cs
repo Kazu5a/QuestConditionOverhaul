@@ -27,13 +27,13 @@ public sealed class OverhaulConfig
     public bool ProcessAllQuests { get; set; } = true;
 
     [JsonPropertyName("targetTraderIds")]
-    public List<string> TargetTraderIds { get; set; } = [];
+    public Dictionary<string, bool> TargetTraderIds { get; set; } = [];
 
     [JsonPropertyName("excludedQuestIds")]
     public List<string> ExcludedQuestIds { get; set; } = [];
 
     [JsonPropertyName("excludedTraderIds")]
-    public List<string> ExcludedTraderIds { get; set; } = [];
+    public Dictionary<string, bool> ExcludedTraderIds { get; set; } = [];
 
     [JsonPropertyName("seed")]
     public string Seed { get; set; } = "quest-condition-overhaul-v1";

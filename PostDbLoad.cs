@@ -70,12 +70,15 @@ public class PostDbLoad(
         var traderCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var conditionPlans = new Dictionary<string, GeneratedConditionPlan>(StringComparer.OrdinalIgnoreCase);
 
+        var targetTraderIdsCaseInsensitive = new Dictionary<string, bool>(config.TargetTraderIds, StringComparer.OrdinalIgnoreCase);
+        var excludedTraderIdsCaseInsensitive = new Dictionary<string, bool>(config.ExcludedTraderIds, StringComparer.OrdinalIgnoreCase);
+
         foreach (Quest quest in quests)
         {
             string questId = quest.Id.ToString();
             string traderId = quest.TraderId.ToString();
 
-            if (!ShouldProcessQuest(questId, traderId, config))
+            if (!ShouldProcessQuest(questId, traderId, config, targetTraderIdsCaseInsensitive, excludedTraderIdsCaseInsensitive))
             {
                 continue;
             }
@@ -110,21 +113,159 @@ public class PostDbLoad(
         }
 
         logger.Success($"[kazusa-QuestConditionOverhaul] Finish-only generated pass completed. Replaced AvailableForFinish on {stats.ProcessedQuests} quests.");
+
+        // Check if there are any new trader IDs to append to the config file
+        var newTraderIds = new List<string>();
+        foreach (var traderId in traderCounts.Keys)
+        {
+            if (!targetTraderIdsCaseInsensitive.ContainsKey(traderId))
+            {
+                newTraderIds.Add(traderId);
+            }
+        }
+
+        if (newTraderIds.Count > 0)
+        {
+            try
+            {
+                string updatedText = InsertNewTraderIds(raw, "targetTraderIds", newTraderIds, tables);
+                updatedText = InsertNewTraderIds(updatedText, "excludedTraderIds", newTraderIds, tables);
+                
+                await fileUtil.WriteFileAsync(configPath, updatedText);
+                logger.Info($"[kazusa-QuestConditionOverhaul] Dynamically added {newTraderIds.Count} new modded trader IDs to config.jsonc.");
+            }
+            catch (System.Exception ex)
+            {
+                logger.Error($"[kazusa-QuestConditionOverhaul] Failed to write back config.jsonc: {ex.Message}");
+            }
+        }
     }
 
-    private static bool ShouldProcessQuest(string questId, string traderId, OverhaulConfig config)
+    private static bool ShouldProcessQuest(string questId, string traderId, OverhaulConfig config, Dictionary<string, bool> targetTraders, Dictionary<string, bool> excludedTraders)
     {
         if (config.ExcludedQuestIds.Contains(questId))
         {
             return false;
         }
 
-        if (config.ExcludedTraderIds.Contains(traderId))
+        if (excludedTraders.TryGetValue(traderId, out bool isExcluded) && isExcluded)
         {
             return false;
         }
 
-        return config.ProcessAllQuests || config.TargetTraderIds.Contains(traderId);
+        if (config.ProcessAllQuests)
+        {
+            return true;
+        }
+
+        return targetTraders.TryGetValue(traderId, out bool isTarget) && isTarget;
+    }
+
+#pragma warning disable CS8600, CS8602
+    private static string GetTraderNickname(string traderId, dynamic tables)
+    {
+        dynamic globalLocales = tables.Locales.Global;
+        string[] langCodes = new[] { "en", "ch" };
+        foreach (string lang in langCodes)
+        {
+            if (globalLocales != null && globalLocales.ContainsKey(lang))
+            {
+                var lazyLoad = globalLocales[lang];
+                var langDict = lazyLoad?.Value;
+                string key = $"{traderId} Nickname";
+                if (langDict != null && langDict.ContainsKey(key))
+                {
+                    string? val = langDict[key]?.ToString();
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+            }
+        }
+        return traderId;
+    }
+#pragma warning restore CS8600, CS8602
+
+    private static string InsertNewTraderIds(string jsoncText, string blockName, List<string> newTraderIds, dynamic tables)
+    {
+        string lineEnding = jsoncText.Contains("\r\n") ? "\r\n" : "\n";
+        string[] lines = jsoncText.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None);
+        var outputLines = new List<string>();
+        bool insideBlock = false;
+        var blockEntries = new List<int>();
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            outputLines.Add(line);
+
+            if (line.Contains($"\"{blockName}\":"))
+            {
+                insideBlock = true;
+                continue;
+            }
+
+            if (insideBlock)
+            {
+                if (line.Trim().StartsWith("}"))
+                {
+                    var idsToAdd = new List<string>();
+                    foreach (var id in newTraderIds)
+                    {
+                        bool alreadyExists = false;
+                        foreach (int idx in blockEntries)
+                        {
+                            if (outputLines[idx].Contains($"\"{id}\""))
+                            {
+                                alreadyExists = true;
+                                break;
+                            }
+                        }
+                        if (!alreadyExists)
+                        {
+                            idsToAdd.Add(id);
+                        }
+                    }
+
+                    if (idsToAdd.Count > 0)
+                    {
+                        if (blockEntries.Count > 0)
+                        {
+                            int lastIdx = blockEntries[blockEntries.Count - 1];
+                            string lastLine = outputLines[lastIdx];
+                            int commentIndex = lastLine.IndexOf("//");
+                            string codePart = commentIndex != -1 ? lastLine.Substring(0, commentIndex) : lastLine;
+                            string commentPart = commentIndex != -1 ? lastLine.Substring(commentIndex) : "";
+
+                            if (!codePart.TrimEnd().EndsWith(","))
+                            {
+                                string trimmedCode = codePart.TrimEnd();
+                                outputLines[lastIdx] = trimmedCode + "," + (commentPart.Length > 0 ? " " + commentPart : "");
+                            }
+                        }
+
+                        for (int k = 0; k < idsToAdd.Count; k++)
+                        {
+                            string id = idsToAdd[k];
+                            string nickname = GetTraderNickname(id, tables);
+                            bool isLast = (k == idsToAdd.Count - 1);
+                            string comma = isLast ? "" : ",";
+                            outputLines.Insert(outputLines.Count - 1, $"    \"{id}\": false{comma} // {nickname}");
+                        }
+                    }
+
+                    insideBlock = false;
+                    blockEntries.Clear();
+                }
+                else if (line.Contains(":"))
+                {
+                    blockEntries.Add(outputLines.Count - 1);
+                }
+            }
+        }
+
+        return string.Join(lineEnding, outputLines);
     }
 
     private static GeneratedConditionPlan BuildPlan(string questId, OverhaulConfig config)
