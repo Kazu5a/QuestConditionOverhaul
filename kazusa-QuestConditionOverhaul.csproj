@@ -3,7 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <ModFolderName>kazusa-QuestConditionOverhaul</ModFolderName>
     <ReleaseOutputDir>Build\SPT\user\mods\kazusa-QuestConditionOverhaul\</ReleaseOutputDir>
     <ReleaseZipPath>Release\$(ModFolderName)-$(Version).zip</ReleaseZipPath>
