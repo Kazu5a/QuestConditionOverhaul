@@ -1,11 +1,4 @@
-
-**Language:** [English](#english) | [中文](#chinese)
-
-<a id="english"></a>
-
-
-
-# Kill & Bill - Quest Completion Overhaul
+# Kill & Bill - Quest Completion Overhaul {.tabset}
 
 Tarkov no longer needs excuses.
 Traders no longer care how the job gets done. They only care about the result.
@@ -20,7 +13,7 @@ No more running in circles.
 No more checklist busywork.
 The traders want results, proof, or cash.
 
-## Overview
+## Overview {.tabset}
 
 Kill & Bill is a quest completion condition overhaul mod for SPT 4.0.
 
@@ -111,9 +104,7 @@ If you use other quest overhaul mods that add, remove, or rewrite `AvailableForF
 
 For the best experience, it is not recommended to use other quest completion randomizer mods at the same time. Mods that only add quests, modify rewards, or adjust start conditions are generally easier to keep compatible.
 
----
-
-<a id="chinese"></a>
+{.endtabset}
 
 # Kill & Bill - 任务完成条件重制
 
@@ -130,7 +121,7 @@ Kill & Bill 会将任务完成条件重写为更直接、更雇佣兵化的目�
 不再跑清单。
 商人要的只有结果、证据，或者钱。
 
-## 模组介绍
+## 模组介绍 {.tabset}
 
 Kill & Bill 是一个面向 SPT 4.0 的任务完成条件重制模组。
 
@@ -220,3 +211,5 @@ Kill & Bill 会在 `PostDBLoad` 阶段修改已经加载的任务完成条件。
 如果同时使用其他会添加、删除或重写 `AvailableForFinish` 条件的任务重制模组，可能会出现功能重叠。最终效果通常取决于哪个模组最后应用修改。
 
 为了获得最佳体验，不建议同时启用其他任务完成条件随机化模组。只添加任务、修改奖励或调整开始条件的模组通常更容易兼容。
+{.endtabset}
+{.endtabset}
