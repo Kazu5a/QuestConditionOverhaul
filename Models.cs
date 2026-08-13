@@ -1,21 +1,24 @@
 using System.Text.Json.Serialization;
 using SPTarkov.Server.Core.Models.Enums;
+using SPTarkov.Server.Core.Models.Spt.Mod;
+using Version = SemanticVersioning.Version;
+using Range = SemanticVersioning.Range;
 
 namespace QuestConditionOverhaulFinal;
 
-public record ModMetadata : SPTarkov.Server.Core.Models.Spt.Mod.AbstractModMetadata
+public sealed class ModMetadata : IModMetadata
 {
-    public override string ModGuid { get; init; } = "com.kazusa.questconditionoverhaul";
-    public override string Name { get; init; } = "kazusa-QuestConditionOverhaul";
-    public override string Author { get; init; } = "kazusa";
-    public override List<string>? Contributors { get; init; }
-    public override SemanticVersioning.Version Version { get; init; } = new("1.0.2");
-    public override SemanticVersioning.Range SptVersion { get; init; } = new("4.0.13");
-    public override List<string>? Incompatibilities { get; init; }
-    public override Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
-    public override string? Url { get; init; }
-    public override bool? IsBundleMod { get; init; }
-    public override string License { get; init; } = "AGPL-3.0";
+    public string ModGuid { get; init; } = "com.kazusa.questconditionoverhaul";
+    public string Name { get; init; } = "kazusa-QuestConditionOverhaul";
+    public string Author { get; init; } = "kazusa";
+    public List<string>? Contributors { get; init; }
+    public Version Version { get; init; } = new("1.1.0");
+    public Range SptVersion { get; init; } = new("~4.1.0");
+    public bool HasPrepatcher { get; init; } = false;
+    public List<string>? Incompatibilities { get; init; }
+    public Dictionary<string, Range>? ModDependencies { get; init; }
+    public string? Url { get; init; } = "https://github.com/Kazu5a/QuestConditionOverhaul";
+    public string License { get; init; } = "AGPL-3.0";
 }
 
 public sealed class OverhaulConfig
@@ -82,6 +85,12 @@ public sealed class KillConfig
 
     [JsonPropertyName("distinguishFactions")]
     public bool DistinguishFactions { get; set; } = true;
+
+    [JsonPropertyName("distinguishLocation")]
+    public bool DistinguishLocation { get; set; } = false;
+
+    [JsonPropertyName("locationWeights")]
+    public Dictionary<string, int> LocationWeights { get; set; } = new();
 }
 
 public sealed class DogtagConfig
@@ -173,7 +182,8 @@ public sealed record GeneratedConditionPlan(
     QuestTypeEnum QuestType,
     string? KillTarget = null,
     DogtagFaction? DogtagFaction = null,
-    CurrencyKind? Currency = null);
+    CurrencyKind? Currency = null,
+    string? Location = null);
 
 public sealed record RewriteStats(
     int ProcessedQuests,
@@ -208,6 +218,9 @@ public sealed class LocaleTemplates
 
     [JsonPropertyName("factions")]
     public Dictionary<string, string> Factions { get; set; } = [];
+
+    [JsonPropertyName("maps")]
+    public Dictionary<string, string> Maps { get; set; } = [];
 }
 
 

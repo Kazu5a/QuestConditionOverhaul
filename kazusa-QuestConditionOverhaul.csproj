@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <ModFolderName>kazusa-QuestConditionOverhaul</ModFolderName>
-    <ReleaseOutputDir>Build\SPT\user\mods\kazusa-QuestConditionOverhaul\</ReleaseOutputDir>
+    <ReleaseOutputDir>Build\SPT_Runtime\user\mods\kazusa-QuestConditionOverhaul\</ReleaseOutputDir>
     <ReleaseZipPath>Release\$(ModFolderName)-$(Version).zip</ReleaseZipPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SPTarkov.Common" Version="4.0.0" />
-    <PackageReference Include="SPTarkov.DI" Version="4.0.0" />
-    <PackageReference Include="SPTarkov.Server.Core" Version="4.0.0" />
+    <PackageReference Include="SPTarkov.Common" Version="4.1.2" />
+    <PackageReference Include="SPTarkov.DI" Version="4.1.2" />
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.1.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +35,7 @@
   </Target>
 
   <Target Name="CopyBuildOutput" AfterTargets="CleanUnwantedFiles" Condition="'$(Configuration)' == 'Release'">
+    <RemoveDir Directories="Build" />
     <MakeDir Directories="$(ReleaseOutputDir)" />
     <ItemGroup>
       <RemainingFiles Include="$(OutputPath)**\*" />

@@ -89,7 +89,25 @@
     "minCount": 5,
     "maxCount": 20,
     // If true, distinguishes between USEC and BEAR PMCs. If false, kills are merged into generic "PMC" targets.
-    "distinguishFactions": false
+    "distinguishFactions": false,
+    // If true, kill quests will be restricted to a single map, rolled from the weights below.
+    "distinguishLocation": false,
+    // Weights for each map that kill quests can be restricted to (higher = more likely). Only used when distinguishLocation is true.
+    // factory covers both Factory day & night, and sandbox covers both Ground Zero variants (low & high),
+    // since the player cannot choose between those instances.
+    "locationWeights": {
+      "bigmap": 10,          // Customs
+      "factory": 15,         // Factory (day & night merged)
+      "interchange": 10,     // Interchange
+      "laboratory": 10,      // The Lab
+      "lighthouse": 10,      // Lighthouse
+      "rezervbase": 10,      // Reserve
+      "shoreline": 10,       // Shoreline
+      "tarkovstreets": 10,   // Streets of Tarkov
+      "woods": 10,           // Woods
+      "sandbox": 5,          // Ground Zero (low & high merged)
+      "labyrinth": 5         // The Labyrinth
+    }
   },
 
   // Dogtag quest options
@@ -165,7 +183,7 @@
   // Multilingual formatting templates for quest descriptions
   "locales": {
     "ch": {
-      "kill": "在任意地图击杀 {count} 名 {target}",
+      "kill": "在{map}击杀 {count} 名 {target}",
       "dogtag": "在战局中上交 {count} 个 {faction} 身份牌",
       "roubles": "上交 {count} 卢布",
       "euros": "上交 {count} 欧元",
@@ -180,10 +198,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "任意地图",
+        "bigmap": "海关",
+        "factory": "工厂",
+        "interchange": "立交桥",
+        "laboratory": "实验室",
+        "lighthouse": "灯塔",
+        "rezervbase": "储备站",
+        "shoreline": "海岸线",
+        "tarkovstreets": "塔科夫街道",
+        "woods": "森林",
+        "sandbox": "零点",
+        "labyrinth": "迷宫"
       }
     },
     "en": {
-      "kill": "Eliminate {count} {target} on any map",
+      "kill": "Eliminate {count} {target} on {map}",
       "dogtag": "Hand over {count} {faction} dogtags",
       "roubles": "Hand over {count} Roubles",
       "euros": "Hand over {count} Euros",
@@ -198,10 +230,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "any map",
+        "bigmap": "Customs",
+        "factory": "Factory",
+        "interchange": "Interchange",
+        "laboratory": "The Lab",
+        "lighthouse": "Lighthouse",
+        "rezervbase": "Reserve",
+        "shoreline": "Shoreline",
+        "tarkovstreets": "Streets of Tarkov",
+        "woods": "Woods",
+        "sandbox": "Ground Zero",
+        "labyrinth": "The Labyrinth"
       }
     },
     "ru": {
-      "kill": "Устранить {count} {target} на любой карте",
+      "kill": "Устранить {count} {target} на {map}",
       "dogtag": "Передать {count} жетонов {faction}",
       "roubles": "Передать {count} рублей",
       "euros": "Передать {count} евро",
@@ -216,10 +262,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "ЧВК"
+      },
+      "maps": {
+        "any": "любой карте",
+        "bigmap": "Таможне",
+        "factory": "Заводе",
+        "interchange": "Развязке",
+        "laboratory": "Лаборатории",
+        "lighthouse": "Маяке",
+        "rezervbase": "Резерве",
+        "shoreline": "Побережье",
+        "tarkovstreets": "Улицах Таркова",
+        "woods": "Лесу",
+        "sandbox": "Нулевой точке",
+        "labyrinth": "Лабиринте"
       }
     },
-    "de": {
-      "kill": "Eliminiere {count} {target} auf einer beliebigen Karte",
+    "ge": {
+      "kill": "Eliminiere {count} {target} auf {map}",
       "dogtag": "Übergib {count} {faction}-Erkennungsmarken",
       "roubles": "Übergib {count} Rubel",
       "euros": "Übergib {count} Euro",
@@ -234,10 +294,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "einer beliebigen Karte",
+        "bigmap": "Customs",
+        "factory": "Factory",
+        "interchange": "Interchange",
+        "laboratory": "Das Labor",
+        "lighthouse": "Lighthouse",
+        "rezervbase": "Reserve",
+        "shoreline": "Shoreline",
+        "tarkovstreets": "Straßen von Tarkov",
+        "woods": "Wäldern",
+        "sandbox": "Ground Zero",
+        "labyrinth": "Das Labyrinth"
       }
     },
     "fr": {
-      "kill": "Éliminer {count} {target} sur n'importe quelle carte",
+      "kill": "Éliminer {count} {target} sur {map}",
       "dogtag": "Livrer {count} plaques d'identification {faction}",
       "roubles": "Livrer {count} Roubles",
       "euros": "Livrer {count} Euros",
@@ -252,10 +326,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "n'importe quelle carte",
+        "bigmap": "Douane",
+        "factory": "Usine",
+        "interchange": "Échangeur",
+        "laboratory": "Le Labo",
+        "lighthouse": "Phare",
+        "rezervbase": "Réserve",
+        "shoreline": "Littoral",
+        "tarkovstreets": "Rues de Tarkov",
+        "woods": "Bois",
+        "sandbox": "Ground Zero",
+        "labyrinth": "Le Labyrinthe"
       }
     },
     "es": {
-      "kill": "Eliminar a {count} {target} en cualquier mapa",
+      "kill": "Eliminar a {count} {target} en {map}",
       "dogtag": "Entregar {count} chapas de identificación de {faction}",
       "roubles": "Entregar {count} rublos",
       "euros": "Entregar {count} euros",
@@ -270,10 +358,24 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "cualquier mapa",
+        "bigmap": "Aduanas",
+        "factory": "Fábrica",
+        "interchange": "Intercambio",
+        "laboratory": "El Laboratorio",
+        "lighthouse": "Faro",
+        "rezervbase": "Reserva",
+        "shoreline": "Costa",
+        "tarkovstreets": "Calles de Tarkov",
+        "woods": "Bosque",
+        "sandbox": "Ground Zero",
+        "labyrinth": "El Laberinto"
       }
     },
     "jp": {
-      "kill": "任意のマップで {target} を {count} 人排除する",
+      "kill": "{map}で {target} を {count} 人排除する",
       "dogtag": "{faction} のドッグタグを {count} 個引き渡す",
       "roubles": "{count} ルーブルを引き渡す",
       "euros": "{count} ユーロを引き渡す",
@@ -288,6 +390,20 @@
         "Usec": "USEC",
         "Bear": "BEAR",
         "AnyPmc": "PMC"
+      },
+      "maps": {
+        "any": "任意のマップ",
+        "bigmap": "カスタム",
+        "factory": "ファクトリー",
+        "interchange": "インターチェンジ",
+        "laboratory": "研究所",
+        "lighthouse": "灯台",
+        "rezervbase": "リザーブ",
+        "shoreline": "ショアライン",
+        "tarkovstreets": "タルコフの街",
+        "woods": "ウッズ",
+        "sandbox": "グラウンドゼロ",
+        "labyrinth": "ラビリンス"
       }
     }
   }

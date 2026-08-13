@@ -1,25 +1,26 @@
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
-using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Enums;
-using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Servers;
+using SPTarkov.Server.Core.Models.Spt.Tables;
+using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Json;
 
 namespace QuestConditionOverhaulFinal;
 
-[Injectable(TypePriority = OnLoadOrder.PostDBModLoader + 100)]
+[Injectable(TypePriority = int.MaxValue)]
 public class PostDbLoad(
-    DatabaseServer databaseServer,
+    TemplateTable templateTable,
+    LocaleTable localeTable,
+    LocaleService localeService,
     JsonUtil jsonUtil,
     FileUtil fileUtil,
-    ModHelper modHelper,
     ISptLogger<PostDbLoad> logger
 ) : IOnLoad
 {
@@ -48,12 +49,28 @@ public class PostDbLoad(
     private const string EurosTemplateId = "569668774bdc2da2298b4568";
     private const string DollarsTemplateId = "5696686a4bdc2da3298b456a";
 
-    private readonly string _modPath = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+    // location key -> quest-level location MongoId (from each map's base.json _Id)
+    private static readonly Dictionary<string, string> QuestLocationIds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "bigmap", "56f40101d2720b2a4d8b45d6" },
+        { "factory", "55f2d3fd4bdc2d5f408b4567" },
+        { "interchange", "5714dbc024597771384a510d" },
+        { "laboratory", "5b0fc42d86f7744a585f9105" },
+        { "lighthouse", "5704e4dad2720bb55b8b4567" },
+        { "rezervbase", "5704e5fad2720bc05b8b4567" },
+        { "shoreline", "5704e554d2720bac5b8b456e" },
+        { "tarkovstreets", "5714dc692459777137212e12" },
+        { "woods", "5704e3c2d2720bac5b8b4567" },
+        { "sandbox", "653e6760052c01c1c805532f" },
+        { "labyrinth", "6733700029c367a3d40b02af" }
+    };
 
-    public async Task OnLoad()
+    private readonly string _modPath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+    public async Task OnLoadAsync(CancellationToken cancellationToken)
     {
         var configPath = System.IO.Path.Combine(_modPath, "config.jsonc");
-        var raw = await fileUtil.ReadFileAsync(configPath);
+        var raw = await fileUtil.ReadFileAsync(configPath, cancellationToken);
         var config = jsonUtil.Deserialize<OverhaulConfig>(raw) ?? new OverhaulConfig();
 
         if (!config.Enabled)
@@ -62,9 +79,9 @@ public class PostDbLoad(
             return;
         }
 
-        dynamic tables = databaseServer.GetTables();
-        List<Quest> quests = ((IEnumerable<Quest>)tables.Templates.Quests.Values).ToList();
-        dynamic locales = tables.Locales.Global;
+        VerifyHardcodedItemIds();
+
+        List<Quest> quests = templateTable.Quests.Values.ToList();
 
         var stats = new RewriteStats(0, 0, 0, 0, 0, 0, 0, 0, 0);
         var traderCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -85,7 +102,7 @@ public class PostDbLoad(
 
             GeneratedConditionPlan plan = BuildPlan(questId, config);
             quest.Type = plan.QuestType;
-            quest.Location = "any";
+            quest.Location = GetQuestLocation(plan, config);
 
             QuestCondition finishCondition = CreateFinishCondition(questId, plan, config);
             quest.Conditions.AvailableForFinish = new List<QuestCondition> { finishCondition };
@@ -96,12 +113,11 @@ public class PostDbLoad(
         }
 
         // Register a transformer for each locale to apply all additions at once
-        var localesDict = (Dictionary<string, LazyLoad<Dictionary<string, string>>>)locales;
-        foreach (var kvp in localesDict)
+        foreach (var kvp in localeTable.Global)
         {
             string langCode = kvp.Key;
-            LazyLoad<Dictionary<string, string>> lazyLoad = kvp.Value;
-            lazyLoad.AddTransformer(new Func<Dictionary<string, string>?, Dictionary<string, string>?>(dict =>
+            LazyLoad<GlobalLocaleDictionary> lazyLoad = kvp.Value;
+            lazyLoad.AddTransformer(dict =>
             {
                 if (dict == null) return null;
                 foreach (var pair in conditionPlans)
@@ -109,7 +125,7 @@ public class PostDbLoad(
                     dict[pair.Key] = BuildConditionLocaleText(pair.Value, langCode, config);
                 }
                 return dict;
-            }));
+            });
         }
 
         logger.Success($"[kazusa-QuestConditionOverhaul] Finish-only generated pass completed. Replaced AvailableForFinish on {stats.ProcessedQuests} quests.");
@@ -128,16 +144,45 @@ public class PostDbLoad(
         {
             try
             {
-                string updatedText = InsertNewTraderIds(raw, "targetTraderIds", newTraderIds, tables);
-                updatedText = InsertNewTraderIds(updatedText, "excludedTraderIds", newTraderIds, tables);
-                
-                await fileUtil.WriteFileAsync(configPath, updatedText);
+                string updatedText = InsertNewTraderIds(raw, "targetTraderIds", newTraderIds, localeService);
+                updatedText = InsertNewTraderIds(updatedText, "excludedTraderIds", newTraderIds, localeService);
+
+                await fileUtil.WriteFileAsync(configPath, updatedText, cancellationToken);
                 logger.Info($"[kazusa-QuestConditionOverhaul] Dynamically added {newTraderIds.Count} new modded trader IDs to config.jsonc.");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 logger.Error($"[kazusa-QuestConditionOverhaul] Failed to write back config.jsonc: {ex.Message}");
             }
+        }
+    }
+
+    private void VerifyHardcodedItemIds()
+    {
+        var missingIds = new List<string>();
+        missingIds.AddRange(UsecDogtagTemplateIds.Where(id => !templateTable.Items.ContainsKey(new MongoId(id))));
+        missingIds.AddRange(BearDogtagTemplateIds.Where(id => !templateTable.Items.ContainsKey(new MongoId(id))));
+
+        if (!templateTable.Items.ContainsKey(new MongoId(RoublesTemplateId)))
+        {
+            missingIds.Add(RoublesTemplateId);
+        }
+
+        if (!templateTable.Items.ContainsKey(new MongoId(EurosTemplateId)))
+        {
+            missingIds.Add(EurosTemplateId);
+        }
+
+        if (!templateTable.Items.ContainsKey(new MongoId(DollarsTemplateId)))
+        {
+            missingIds.Add(DollarsTemplateId);
+        }
+
+        if (missingIds.Count > 0)
+        {
+            logger.Warning(
+                $"[kazusa-QuestConditionOverhaul] The following hardcoded item IDs are NOT present in this SPT 4.1 database build, some quests may be uncompletable: {string.Join(", ", missingIds)}"
+            );
         }
     }
 
@@ -161,36 +206,25 @@ public class PostDbLoad(
         return targetTraders.TryGetValue(traderId, out bool isTarget) && isTarget;
     }
 
-#pragma warning disable CS8600, CS8602
-    private static string GetTraderNickname(string traderId, dynamic tables)
+    private static string GetTraderNickname(string traderId, LocaleService localeService)
     {
-        dynamic globalLocales = tables.Locales.Global;
-        string[] langCodes = new[] { "en", "ch" };
-        foreach (string lang in langCodes)
+        foreach (string lang in new[] { "en", "ch" })
         {
-            if (globalLocales != null && globalLocales.ContainsKey(lang))
+            Dictionary<string, string> locale = localeService.GetLocaleDb(lang);
+            string key = $"{traderId} Nickname";
+            if (locale.TryGetValue(key, out string? nickname) && !string.IsNullOrWhiteSpace(nickname))
             {
-                var lazyLoad = globalLocales[lang];
-                var langDict = lazyLoad?.Value;
-                string key = $"{traderId} Nickname";
-                if (langDict != null && langDict.ContainsKey(key))
-                {
-                    string? val = langDict[key]?.ToString();
-                    if (!string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
+                return nickname;
             }
         }
+
         return traderId;
     }
-#pragma warning restore CS8600, CS8602
 
-    private static string InsertNewTraderIds(string jsoncText, string blockName, List<string> newTraderIds, dynamic tables)
+    private static string InsertNewTraderIds(string jsoncText, string blockName, List<string> newTraderIds, LocaleService localeService)
     {
         string lineEnding = jsoncText.Contains("\r\n") ? "\r\n" : "\n";
-        string[] lines = jsoncText.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None);
+        string[] lines = jsoncText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
         var outputLines = new List<string>();
         bool insideBlock = false;
         var blockEntries = new List<int>();
@@ -248,7 +282,7 @@ public class PostDbLoad(
                         for (int k = 0; k < idsToAdd.Count; k++)
                         {
                             string id = idsToAdd[k];
-                            string nickname = GetTraderNickname(id, tables);
+                            string nickname = GetTraderNickname(id, localeService);
                             bool isLast = (k == idsToAdd.Count - 1);
                             string comma = isLast ? "" : ",";
                             outputLines.Insert(outputLines.Count - 1, $"    \"{id}\": false{comma} // {nickname}");
@@ -279,22 +313,23 @@ public class PostDbLoad(
         {
             bool pmc = GetDeterministicPercent(questId, config.Seed, "killTarget") < config.Kills.PmcChance;
             int count = GetSteppedRange(questId, config.Seed, "killCount", config.Kills.MinCount, config.Kills.MaxCount, 1);
+            string? location = config.Kills.DistinguishLocation ? PickWeightedLocation(questId, config) : null;
 
             if (pmc)
             {
                 if (config.Kills.DistinguishFactions)
                 {
                     bool usec = GetDeterministicPercent(questId, config.Seed, "killFaction") < config.Kills.UsecChance;
-                    return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, usec ? "Usec" : "Bear");
+                    return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, usec ? "Usec" : "Bear", null, null, location);
                 }
                 else
                 {
-                    return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, "AnyPmc");
+                    return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, "AnyPmc", null, null, location);
                 }
             }
             else
             {
-                return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, "Savage");
+                return new GeneratedConditionPlan(GeneratedConditionKind.Kill, count, QuestTypeEnum.Elimination, "Savage", null, null, location);
             }
         }
 
@@ -345,6 +380,44 @@ public class PostDbLoad(
 
     private static QuestCondition CreateKillCondition(string questId, GeneratedConditionPlan plan)
     {
+        var counterConditions = new List<QuestConditionCounterCondition>
+        {
+            new QuestConditionCounterCondition
+            {
+                Id = new MongoId(GenerateId(questId, "kill-inner")),
+                CompareMethod = ">=",
+                ConditionType = "Kills",
+                ResetOnSessionEnd = false,
+                Target = new ListOrT<string>(null!, plan.KillTarget!),
+                Value = 1,
+                BodyPart = [],
+                Daytime = new DaytimeCounter { From = 0, To = 0 },
+                Distance = new CounterConditionDistance { CompareMethod = ">=", Value = 0 },
+                DynamicLocale = false,
+                EnemyEquipmentExclusive = [],
+                EnemyEquipmentInclusive = [],
+                EnemyHealthEffects = [],
+                SavageRole = [],
+                Weapon = [],
+                WeaponCaliber = [],
+                WeaponModsExclusive = [],
+                WeaponModsInclusive = []
+            }
+        };
+
+        if (!string.IsNullOrEmpty(plan.Location))
+        {
+            counterConditions.Add(
+                new QuestConditionCounterCondition
+                {
+                    Id = new MongoId(GenerateId(questId, "kill-location")),
+                    ConditionType = "Location",
+                    DynamicLocale = false,
+                    Target = new ListOrT<string>(GetLocationTargetIds(plan.Location), null!)
+                }
+            );
+        }
+
         return new QuestCondition
         {
             CompleteInSeconds = 0,
@@ -352,30 +425,7 @@ public class PostDbLoad(
             Counter = new QuestConditionCounter
             {
                 Id = GenerateId(questId, "kill-counter"),
-                Conditions =
-                [
-                    new QuestConditionCounterCondition
-                    {
-                        Id = new MongoId(GenerateId(questId, "kill-inner")),
-                        CompareMethod = ">=",
-                        ConditionType = "Kills",
-                        ResetOnSessionEnd = false,
-                        Target = new ListOrT<string>(null!, plan.KillTarget!),
-                        Value = 1,
-                        BodyPart = [],
-                        Daytime = new DaytimeCounter { From = 0, To = 0 },
-                        Distance = new CounterConditionDistance { CompareMethod = ">=", Value = 0 },
-                        DynamicLocale = false,
-                        EnemyEquipmentExclusive = [],
-                        EnemyEquipmentInclusive = [],
-                        EnemyHealthEffects = [],
-                        SavageRole = [],
-                        Weapon = [],
-                        WeaponCaliber = [],
-                        WeaponModsExclusive = [],
-                        WeaponModsInclusive = []
-                    }
-                ]
+                Conditions = counterConditions
             },
             DoNotResetIfCounterCompleted = false,
             DynamicLocale = false,
@@ -410,7 +460,7 @@ public class PostDbLoad(
             Target = new ListOrT<string>(
                 (plan.DogtagFaction == null
                     ? CombinedDogtagTemplateIds(config)
-                    : (plan.DogtagFaction == DogtagFaction.Usec 
+                    : (plan.DogtagFaction == DogtagFaction.Usec
                         ? (config.Dogtags.UsecTemplateIds.Count > 0 ? config.Dogtags.UsecTemplateIds : UsecDogtagTemplateIds.ToList())
                         : (config.Dogtags.BearTemplateIds.Count > 0 ? config.Dogtags.BearTemplateIds : BearDogtagTemplateIds.ToList()))),
                 null!),
@@ -475,9 +525,11 @@ public class PostDbLoad(
         {
             string targetKey = plan.KillTarget ?? "AnyPmc";
             string targetName = templates.Targets.TryGetValue(targetKey, out var val) ? val : targetKey;
+            string mapName = GetMapName(plan, templates);
             return templates.Kill
                 .Replace("{count}", plan.Count.ToString())
-                .Replace("{target}", targetName);
+                .Replace("{target}", targetName)
+                .Replace("{map}", mapName);
         }
 
         if (plan.Kind == GeneratedConditionKind.Dogtag)
@@ -499,11 +551,21 @@ public class PostDbLoad(
         return currencyTemplate.Replace("{count}", plan.Count.ToString("N0"));
     }
 
+    private static string GetMapName(GeneratedConditionPlan plan, LocaleTemplates templates)
+    {
+        if (string.IsNullOrEmpty(plan.Location))
+        {
+            return templates.Maps.TryGetValue("any", out var anyVal) ? anyVal : "any map";
+        }
+
+        return templates.Maps.TryGetValue(plan.Location, out var val) ? val : plan.Location;
+    }
+
     private static LocaleTemplates GetHardcodedDefaultEnglishTemplates()
     {
         return new LocaleTemplates
         {
-            Kill = "Eliminate {count} {target}",
+            Kill = "Eliminate {count} {target} on {map}",
             Dogtag = "Hand over {count} {faction} dogtags",
             Roubles = "Hand over {count} Roubles",
             Euros = "Hand over {count} Euros",
@@ -520,6 +582,21 @@ public class PostDbLoad(
                 { "Usec", "USEC" },
                 { "Bear", "BEAR" },
                 { "AnyPmc", "PMC" }
+            },
+            Maps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "any", "any map" },
+                { "bigmap", "Customs" },
+                { "factory", "Factory" },
+                { "interchange", "Interchange" },
+                { "laboratory", "The Lab" },
+                { "lighthouse", "Lighthouse" },
+                { "rezervbase", "Reserve" },
+                { "shoreline", "Shoreline" },
+                { "tarkovstreets", "Streets of Tarkov" },
+                { "woods", "Woods" },
+                { "sandbox", "Ground Zero" },
+                { "labyrinth", "The Labyrinth" }
             }
         };
     }
@@ -545,6 +622,75 @@ public class PostDbLoad(
     {
         byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes($"{seed}:{questId}:{salt}"));
         return hash[0] % 100;
+    }
+
+    private static int GetDeterministicInt(string questId, string seed, string salt, int maxExclusive)
+    {
+        if (maxExclusive <= 1)
+        {
+            return 0;
+        }
+
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes($"{seed}:{questId}:{salt}"));
+        int value = BitConverter.ToInt32(hash, 0) & int.MaxValue;
+        return value % maxExclusive;
+    }
+
+    private static string? PickWeightedLocation(string questId, OverhaulConfig config)
+    {
+        var weighted = config.Kills.LocationWeights
+            .Where(kvp => kvp.Value > 0)
+            .ToList();
+
+        if (weighted.Count == 0)
+        {
+            return null;
+        }
+
+        int totalWeight = weighted.Sum(kvp => kvp.Value);
+        int roll = GetDeterministicInt(questId, config.Seed, "killLocation", totalWeight);
+
+        foreach (var kvp in weighted)
+        {
+            roll -= kvp.Value;
+            if (roll < 0)
+            {
+                return kvp.Key;
+            }
+        }
+
+        return weighted[^1].Key;
+    }
+
+    private static List<string> GetLocationTargetIds(string location)
+    {
+        // These values are EFT quest-condition location IDs, whose casing does not
+        // consistently match the lowercase SPT database folder names.
+        return location.ToLowerInvariant() switch
+        {
+            "bigmap" => ["bigmap"],
+            "factory" => ["factory4_day", "factory4_night"],
+            "interchange" => ["Interchange"],
+            "laboratory" => ["laboratory"],
+            "lighthouse" => ["Lighthouse"],
+            "rezervbase" => ["RezervBase"],
+            "shoreline" => ["Shoreline"],
+            "tarkovstreets" => ["TarkovStreets"],
+            "woods" => ["Woods"],
+            "sandbox" => ["Sandbox", "Sandbox_high"],
+            "labyrinth" => ["Labyrinth"],
+            _ => [location]
+        };
+    }
+
+    private static string GetQuestLocation(GeneratedConditionPlan plan, OverhaulConfig config)
+    {
+        if (plan.Kind != GeneratedConditionKind.Kill || !config.Kills.DistinguishLocation || string.IsNullOrEmpty(plan.Location))
+        {
+            return "any";
+        }
+
+        return QuestLocationIds.TryGetValue(plan.Location, out var id) ? id : "any";
     }
 
     private static int GetSteppedRange(string questId, string seed, string salt, int min, int max, int step)

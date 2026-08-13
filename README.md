@@ -7,7 +7,7 @@ This is an SPT (Single Player Tarkov) C# server mod designed to randomly overhau
 ## 🛠 Prerequisites
 
 To build and compile this project, you need:
-- **.NET 9.0 SDK** (or higher) installed on your development machine.
+- **.NET 10.0 SDK** (or higher) installed on your development machine.
 - An IDE such as **VS Code**, **Rider**, or **Visual Studio**.
 
 ---
@@ -34,16 +34,16 @@ dotnet build -c Release
 2. **Clean Output**: A custom MSBuild target (`CleanUnwantedFiles`) automatically deletes developer-only files like `.pdb`, `.deps.json`, and `.runtimeconfig.json` from the output directory to keep the mod package clean.
 3. **Local Packaging**: A custom MSBuild target (`CopyBuildOutput`) structures the files into a deployment-ready directory under:
    ```text
-   Build/SPT/user/mods/kazusa-QuestConditionOverhaul/
+   Build/SPT_Runtime/user/mods/kazusa-QuestConditionOverhaul/
    ```
-4. **Archive Generation**: Generates a deployment ZIP file under the `Release/` folder (e.g. `Release/kazusa-QuestConditionOverhaul-1.0.0.zip`).
+4. **Archive Generation**: Generates a deployment ZIP file under the `Release/` folder (e.g. `Release/kazusa-QuestConditionOverhaul-1.1.0.zip`).
 
 ---
 
 ## 🚚 Deployment
 
 To install or update the mod:
-1. Copy the structured directory `Build/SPT/user/mods/kazusa-QuestConditionOverhaul` to the `user/mods/` folder of your SPT installation directory.
+1. Copy the structured directory `Build/SPT_Runtime/user/mods/kazusa-QuestConditionOverhaul` to `SPT_Runtime/user/mods/` in your SPT installation directory.
    - Alternatively, extract the contents of the generated `.zip` archive from the `Release/` directory directly into your SPT server root.
 2. Start the SPT Server.
 

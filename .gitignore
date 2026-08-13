@@ -16,4 +16,4 @@ Release/
 .DS_Store
 Thumbs.db
 
-
+docs/*

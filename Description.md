@@ -15,7 +15,7 @@ The traders want results, proof, or cash.
 
 ## Overview {.tabset}
 
-Kill & Bill is a quest completion condition overhaul mod for SPT 4.0.
+Kill & Bill is a quest completion condition overhaul mod for SPT 4.1.x.
 
 It does not add new quests, change quest chains, reassign traders, or modify quest rewards. Instead, it rewrites the completion conditions of already loaded quests and replaces them with one of three objective types:
 
@@ -88,7 +88,7 @@ Changing the seed or config will generate a different set of quest completion co
 2. Extract it into your SPT root directory.
 3. Make sure the mod folder is located at:
 
-`SPT/user/mods/kazusa-QuestConditionOverhaul`
+`SPT_Runtime/user/mods/kazusa-QuestConditionOverhaul`
 
 4. Start SPT Server.
 
@@ -123,7 +123,7 @@ Kill & Bill 会将任务完成条件重写为更直接、更雇佣兵化的目�
 
 ## 模组介绍 {.tabset}
 
-Kill & Bill 是一个面向 SPT 4.0 的任务完成条件重制模组。
+Kill & Bill 是一个面向 SPT 4.1.x 的任务完成条件重制模组。
 
 它不会添加新任务，也不会改变任务链、商人归属或任务奖励。模组只会重写已加载任务的完成条件，并将其替换为以下三类目标之一：
 
@@ -196,7 +196,7 @@ Kill & Bill 是一个面向 SPT 4.0 的任务完成条件重制模组。
 2. 解压到 SPT 根目录。
 3. 确保模组文件夹位于：
 
-`SPT/user/mods/kazusa-QuestConditionOverhaul`
+`SPT_Runtime/user/mods/kazusa-QuestConditionOverhaul`
 
 4. 启动 SPT Server。
 
